@@ -31,7 +31,7 @@ public Long join(Member member) {
         }
     }
 
-    public List<Member> findMember() {
+    public List<Member> findMembers() {
     return memberRepository.findAll();
     }
     public Member findOne(Long memberId){
