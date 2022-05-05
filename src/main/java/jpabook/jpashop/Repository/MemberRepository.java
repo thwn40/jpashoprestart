@@ -14,10 +14,10 @@ public class MemberRepository {
 
     private final EntityManager em;
 
-    public Long save(Member member) {
+    public void save(Member member) {
         em.persist(member);
-        return member.getId();
     }
+
     //커맨드와 쿼리를 분리해라 저장을 하고나면 리턴값을 만들지 않는다
     public Member findOne(Long id){
         return em.find(Member.class, id);

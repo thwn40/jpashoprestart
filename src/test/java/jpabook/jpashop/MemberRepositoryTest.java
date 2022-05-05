@@ -2,6 +2,7 @@ package jpabook.jpashop;
 
 import jpabook.jpashop.Repository.MemberRepository;
 import jpabook.jpashop.domain.Member;
+import jpabook.jpashop.domain.Service.MemberService;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,25 +12,49 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class MemberRepositoryTest {
     @Autowired
     MemberRepository memberRepository;
+    @Autowired
+    MemberService memberService;
+    @Autowired
+    EntityManager em;
 
     @Test
-    @Transactional
-    @Rollback(false)
-    public void testMember() throws Exception{
+    public void 회원가입() throws Exception {
+        //given
         Member member = new Member();
-        member.setName("membera");
-        Long savedId = memberRepository.save(member);
-        Member findMember = memberRepository.findOne(savedId);
+        member.setName("kim");
 
-        Assertions.assertThat(findMember.getId()).isEqualTo(member.getId());
-        Assertions.assertThat(findMember.getName()).isEqualTo(member.getName());
-        Assertions.assertThat(findMember).isEqualTo(member);
+        //when
+        Long savedId = memberService.join(member);
 
-
+        //then
+        assertEquals(member, memberRepository.findOne(savedId));
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void 중복_회원_예외() throws Exception {
+        //given
+        Member member1 = new Member();
+        member1.setName("kim");
+
+        Member member2 = new Member();
+        member2.setName("kim");
+
+        //when
+        memberService.join(member1);
+        memberService.join(member2); //예외가 발생해야 한다!!!
+
+        //then
+        fail("예외가 발생해야 한다.");
+    }
+
 }

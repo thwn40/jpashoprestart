@@ -37,4 +37,10 @@ public Long join(Member member) {
     public Member findOne(Long memberId){
     return memberRepository.findOne(memberId);
     }
+
+    @Transactional
+    public void update(Long id, String name) {
+        Member member = memberRepository.findOne(id);
+        member.setName(name);
+    }
 }
