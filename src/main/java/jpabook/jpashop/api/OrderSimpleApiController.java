@@ -38,7 +38,7 @@ private final OrderRepository orderRepository;
 
 @GetMapping("/api/v3/simple-orders")
 public List<SimpleOrderDto> orderV3() {
-    List<Order> orders = orderRepository.findAllWithMemberDelivery();
+    List<Order> orders = orderRepository.findAllWithMemberDelivery(1,10);
     List<SimpleOrderDto> result = orders.stream()
             .map(o -> new SimpleOrderDto(o))
             .collect(Collectors.toList());

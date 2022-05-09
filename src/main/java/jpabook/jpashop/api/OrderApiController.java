@@ -3,6 +3,10 @@ package jpabook.jpashop.api;
 
 import jpabook.jpashop.Repository.OrderRepository;
 import jpabook.jpashop.Repository.OrderSearch;
+import jpabook.jpashop.Repository.order.query.OrderFlatDto;
+import jpabook.jpashop.Repository.order.query.OrderItemQueryDto;
+import jpabook.jpashop.Repository.order.query.OrderQueryDto;
+import jpabook.jpashop.Repository.order.query.OrderQueryRepository;
 import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Order;
 import jpabook.jpashop.domain.OrderItem;
@@ -19,11 +23,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.*;
+
 @RestController
 @RequiredArgsConstructor
 public class OrderApiController {
 
     private final OrderRepository orderRepository;
+    private final OrderQueryRepository orderQueryRepository;
 
     @GetMapping("/api/v1/orders")
     public List<Order> ordersV1() {
@@ -42,7 +49,7 @@ public class OrderApiController {
         List<Order> orders = orderRepository.findAllByString(new OrderSearch());
         List<OrderDto> collect = orders.stream()
                 .map(o->new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         return collect;
 
@@ -54,7 +61,7 @@ public class OrderApiController {
         List<Order> orders = orderRepository.findAllWithItem();
         List<OrderDto> collect = orders.stream()
                 .map(o->new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         return collect;
 
@@ -64,14 +71,42 @@ public class OrderApiController {
     @GetMapping("/api/v3.1/orders")
     public List<OrderDto> orderV3_page(@RequestParam(value = "offset", defaultValue = "0") int offset,
                                        @RequestParam(value = "limit", defaultValue = "100") int limit){
-        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+        List<Order> orders = orderRepository.findAllWithMemberDelivery(offset,limit);
         List<OrderDto> collect = orders.stream()
                 .map(o->new OrderDto(o))
-                .collect(Collectors.toList());
-
+                .collect(toList());
+        //첫번째 페치조인 orderitems를 order 조회한 만큼 땡겨옴 item in절 나간다.
         return collect;
 
     }
+
+    @GetMapping("/api/v4/orders")
+    public List<OrderQueryDto> orderV4(){
+        return orderQueryRepository.findOrderQueryDtos();
+    }
+
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> orderV5(){
+        return orderQueryRepository.findAllByDto_optimization();
+    }
+
+    @GetMapping("/api/v6/orders")
+    public List<OrderQueryDto> orderV6(){
+        List<OrderFlatDto> flats = orderQueryRepository.findAllByDto_flat();
+        return flats.stream()
+                .collect(groupingBy(o -> new OrderQueryDto(o.getOrderId(),
+                                o.getName(), o.getOrderDate(), o.getOrderStatus(), o.getAddress()),
+                        mapping(o -> new OrderItemQueryDto(o.getOrderId(),
+                                o.getItemName(), o.getOrderPrice(), o.getCount()), toList())
+                )).entrySet().stream()
+                .map(e -> new OrderQueryDto(e.getKey().getOrderId(),
+                        e.getKey().getName(), e.getKey().getOrderDate(), e.getKey().getOrderStatus(),
+                        e.getKey().getAddress(), e.getValue()))
+                .collect(toList());
+
+
+    }
+
 
 
     @Data
@@ -91,7 +126,7 @@ public class OrderApiController {
             address = order.getDelivery().getAddress();
             orderItems = order.getOrderItems().stream()
                     .map(orderItem -> new OrderItemDto(orderItem))
-                    .collect(Collectors.toList());
+                    .collect(toList());
 
         }
     }
